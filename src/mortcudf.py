@@ -1,66 +1,90 @@
 import sys
 
+from utils import is_nvidia_gpu_available
+
+NVIDIA_GPU_AVAILABILITY = is_nvidia_gpu_available()
+
+if NVIDIA_GPU_AVAILABILITY:
+    from cudf import DataFrame, Series, concat, get_dummies, merge, read_csv
+    from cuml.preprocessing import OneHotEncoder
+    from cupy import concatenate, double, int8, zeros
+else:
+    from numpy import concatenate, double, int8, zeros
+    from pandas import (DataFrame, Series, concat, get_dummies, isnull, merge,
+                        read_csv)
+    from sklearn.preprocessing import OneHotEncoder
+    
 data_folder_path = sys.argv[1]
 mounted_output_path = sys.argv[2]
 n_gpus = int(sys.argv[3])
 n_years = int(sys.argv[4])
 
 isPlot = False
+import os
+import sys
 import time
-import numpy,sys,os, pandas as pd
+
+import numpy
+import pandas as pd
+
 if n_gpus == 0:
-    from pandas import read_csv,concat,merge,DataFrame,get_dummies,Series,isnull
+    from numpy import concatenate, double, int8, zeros
+    from pandas import (DataFrame, Series, concat, get_dummies, isnull, merge,
+                        read_csv)
     from sklearn.preprocessing import OneHotEncoder
-    from numpy import zeros,double,int8,concatenate
 else:
     print("Importing read_csv, concat, merge, DataFrame, get_dummies, Series using Rapid's Libraries")
-    from cudf import read_csv,concat,merge,DataFrame,get_dummies,Series
+    import cudf
+    import cuml
+    import cupy
+    from cudf import DataFrame, Series, concat, get_dummies, merge, read_csv
     from cuml.preprocessing import OneHotEncoder
-    from cupy import zeros,double,int8,concatenate
-    import cupy, cudf, cuml
+    from cupy import concatenate, double, int8, zeros
 numpy.set_printoptions(threshold=sys.maxsize)
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
-import time,os
-import seaborn as sns
+import os
+import time
+
 import matplotlib.pyplot as plt
+import seaborn as sns
 import sklearn.metrics as metrics
+
 try:
     import shap
 except Exception as e:
     print(e)
-from azureml.core.run import Run
+import tarfile
+import time
+import traceback
+import urllib.request
 
+import matplotlib.pyplot as mp
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import xgboost as xgb
+from azureml.core.run import Run
+from imblearn.combine import SMOTEENN
+# %matplotlib inlineimport cupy
+from imblearn.over_sampling import RandomOverSampler
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.metrics import (classification_report, confusion_matrix,
+                             roc_auc_score, roc_curve)
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import roc_auc_score
-from sklearn.metrics import roc_curve
+from xgboost import plot_importance
+
+from constants_ import DATA_DOWNLOAD_URL, PERFORMANCE_COLS, col_acq, dtypesDict
+from data_download import download_and_extract_data
+from utils import read_acquisition_files, read_performance_files
+
 # import pathlib
 # sys.path.append(pathlib.Path().resolve())
 
-import seaborn as sns
-import pandas as pd
-import numpy as np
-import xgboost as xgb
-from xgboost import plot_importance
-import traceback
 
-import matplotlib.pyplot as mp
-# %matplotlib inlineimport cupy
-from imblearn.over_sampling import RandomOverSampler
-from imblearn.combine import SMOTEENN
-import xgboost as xgb
 
-import urllib.request
-import time
-import tarfile
 
-from constants_ import DATA_DOWNLOAD_URL, PERFORMANCE_COLS, dtypesDict, col_acq
-from data_download import download_and_extract_data
-from utils import read_acquisition_files, read_performance_files
 
 run = Run.get_context()    
 
@@ -87,95 +111,6 @@ else:
     download_and_extract_data(DATA_DOWNLOAD_URL, data_folder_path)
     print("Downloading and extracting data completed")
 
-start = time.time()
-df_acq = read_acquisition_files(data_folder_path, YEARS)
-tread_acq = time.time()-start
-print("Time taken for reading Acquisition datasets: ", round(tread_acq, 1),'secs')
-
-print("Acquisition raw file shape: ", df_acq.shape)
-print("\nSample Acquisition Rows:")
-print(concat([df_acq.head(2), df_acq.tail(2)], axis=0))
-print(df_acq.info())
-
-
-print('Performance col list is len',len(PERFORMANCE_COLS),'but using only 2!')
-
-start = time.time()
-df_per = read_performance_files(data_folder_path, YEARS)
-tread_per = time.time()-start
-print("Time taken for reading Performance datasets: ", round(tread_per, 1),'secs')
-
-print("Performance raw file shape: ", df_per.shape)
-print(df_per.info())
-
-df_per = df_per.dropna(subset=['CLDS'])
-df_per['CLDS'] = df_per['CLDS'].astype(str)
-print("Performance file shape after dropping nulls: ", df_per.shape)
-
-df_delinq4 = df_per.loc[df_per['CLDS']=='4']
-print("Performance (Delinquency=4) shape: ", df_delinq4.shape)
-df_delinq4.drop_duplicates(subset='LoanID', keep='last', inplace=True)
-print("Performance after dropping duplicates shape: ",df_delinq4.shape)
-
-# print(df_acq.shape,df_delinq4.shape)
-
-def merge_acq_per_files(df_acq, df_delinq4):
-    print("Merging Acquisition and Performace files...")
-    df = merge(df_acq, df_delinq4, on='LoanID', how='outer')
-    df = df.reset_index().rename(columns={'CLDS': 'Default'})
-    print("Shape after merging:", df.shape)
-    return df
-
-def create_target(df):
-    df.loc[df['Default'] == '4', 'Default'] = 1
-    df.loc[df['Default'].isnull(), 'Default'] = 0 #for null caused by outer join
-    df['Default'] = df['Default'].astype(int)
-    print("Target Column value counts:")
-    print(df['Default'].value_counts())
-    return df
-
-start = time.time()
-df = merge_acq_per_files(df_acq, df_delinq4)
-tmerg = time.time()-start
-print("Time taken for merging: ", round(tmerg, 2),'secs')
-del df_acq
-del df_per
-del df_delinq4
-
-n_rows, n_cols = df.shape
-
-df = create_target(df)
-
-
-print("Dropping the columns 'index','OrDate','OrLTV','MortInsPerc','RelMortInd','FirstPayment', 'Zip','PropertyState'...")
-df.drop(['index','OrDate','OrLTV','MortInsPerc','RelMortInd','FirstPayment'], axis=1, inplace=True)
-#New rule to save GPU memory Aug15: removing PropertyState saves df width
-df.drop(['Zip','PropertyState'], axis=1, inplace=True)
-print("Shape:", df.shape)
-
-
-def fillnan(df):
-    if n_gpus == 0: columns = df.columns[df.isnull().any().tolist()]
-    else: columns = df.columns[df.isnull().any().to_arrow().to_pylist()]
-    for name in columns:
-        if df[name].dtype == 'object':
-            df.loc[df[name].isnull(), name] = df[name].mode()
-        else:
-            df.loc[df[name].isnull(), name] = df[name].mean()
-    return df
-
-start = time.time()
-print("Imputing and One-hot Encoding...")
-df = fillnan(df)
-timpute = time.time()-start
-print("Time taken for imputing: ", round(timpute, 2),'secs')
-
-
-start = time.time()
-df = get_dummies(df)
-print("Shape:", df.shape)
-tdummies = time.time()-start
-print("Time taken for dummies: ", round(tdummies, 2),'secs')
 
 
 y = df['Default'].values

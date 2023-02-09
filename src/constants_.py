@@ -1,7 +1,8 @@
 from collections import OrderedDict
+
 DATA_DOWNLOAD_URL = "http://rapidsai-data.s3-website.us-east-2.amazonaws.com/notebook-mortgage-data/mortgage_2000-2016.tgz"
 
-col_acq = ['LoanID','Channel','SellerName','OrInterestRate','OrUnpaidPrinc','OrLoanTerm',
+ACQUISITION_COLS = ['LoanID','Channel','SellerName','OrInterestRate','OrUnpaidPrinc','OrLoanTerm',
         'OrDate','FirstPayment','OrLTV','OrCLTV','NumBorrow','DTIRat','CreditScore',
         'FTHomeBuyer','LoanPurpose','PropertyType','NumUnits','OccStatus','PropertyState',
         'Zip','MortInsPerc','ProductType','CoCreditScore','Extra','MortInsType','RelMortInd']
