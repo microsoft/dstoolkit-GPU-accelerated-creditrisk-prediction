@@ -1,64 +1,16 @@
 import os
 from typing import Any, Dict, List, Tuple
 
-from constants_ import ACQUISITION_COLS, PERFORMANCE_COLS, dtypesDict
-from utils import get_dataframe_summary, is_nvidia_gpu_available, timeit
+from constants_ import ACQUISITION_COLS, PERFORMANCE_COLS
+from src.imputation.central_imputation import CentralImputation
+from src.utils import get_dataframe_summary, is_nvidia_gpu_available, timeit
 
 NVIDIA_GPU_AVAILABILITY = is_nvidia_gpu_available()
 
 if NVIDIA_GPU_AVAILABILITY:
-    from cudf import DataFrame, concat, get_dummies, merge, read_csv
+    from cudf import DataFrame, concat, merge, read_csv
 else:
-    from pandas import DataFrame, concat, get_dummies, merge, read_csv
-
-@timeit
-def merge_acq_per_files(df_acq: DataFrame, df_delinq4: DataFrame) -> DataFrame:
-    """Outer join Acquisition and Performance files. 'CLDS' column in renamed to 'Default'
-
-    Args:
-        df_acq (DataFrame): Acquisition Dataframe.
-        df_delinq4 (DataFrame): Dataframe with delinquency values.
-
-    Returns:
-        DataFrame: Merged Dataframe with 'CLDS' renamed to 'Default'.
-    """
-    print("Merging Acquisition and Performace files...")
-    df = merge(df_acq, df_delinq4, on='LoanID', how='outer')
-    print("Shape of dataframe after merging:", df.shape)
-    df = df.reset_index().rename(columns={'CLDS': 'Default'})
-    print("'CLDS' column has been renamed to 'Default'")
-    return df
-
-@timeit
-def create_target(df: DataFrame) -> DataFrame:
-    """Transforms target for Credit Risk dataset such that default==4 is mapped to 1, others to 0.
-
-    Args:
-        df (DataFrame): Dataframe with Default values unmapped.
-
-    Returns:
-        DataFrame: "Default" values mapped to 1 and 0.
-    """
-    df.loc[df['Default'] == '4', 'Default'] = 1
-    df.loc[df['Default'].isnull(), 'Default'] = 0
-    df['Default'] = df['Default'].astype(int)
-    print("Target Column value counts:")
-    print(df['Default'].value_counts())
-    return df
-
-
-@timeit
-def fillnan(df, nvidia_gpu_available):
-    if not nvidia_gpu_available: 
-        columns = df.columns[df.isnull().any().tolist()]
-    else: 
-        columns = df.columns[df.isnull().any().to_arrow().to_pylist()]
-    for name in columns:
-        if df[name].dtype == 'object':
-            df.loc[ df[name].isnull(), name] = df[name].mode()
-        else:
-            df.loc[df[name].isnull(), name] = df[name].mean()
-    return df
+    from pandas import DataFrame, concat, merge, read_csv
 
 
 class DataPreparation:
@@ -143,6 +95,41 @@ class DataPreparation:
                 del df_per_qtr
         return df_per
 
+    @timeit
+    def merge_acq_per_files(self, df_acq: DataFrame, df_delinq4: DataFrame) -> DataFrame:
+        """Outer join Acquisition and Performance files. 'CLDS' column in renamed to 'Default'
+
+        Args:
+            df_acq (DataFrame): Acquisition Dataframe.
+            df_delinq4 (DataFrame): Dataframe with delinquency values.
+
+        Returns:
+            DataFrame: Merged Dataframe with 'CLDS' renamed to 'Default'.
+        """
+        print("Merging Acquisition and Performace files...")
+        df = merge(df_acq, df_delinq4, on='LoanID', how='outer')
+        print("Shape of dataframe after merging:", df.shape)
+        df = df.reset_index().rename(columns={'CLDS': 'Default'})
+        print("'CLDS' column has been renamed to 'Default'")
+        return df
+
+    @timeit
+    def create_target(self, df: DataFrame) -> DataFrame:
+        """Transforms target for Credit Risk dataset such that default==4 is mapped to 1, others to 0.
+
+        Args:
+            df (DataFrame): Dataframe with Default values unmapped.
+
+        Returns:
+            DataFrame: "Default" values mapped to 1 and 0.
+        """
+        df.loc[df['Default'] == '4', 'Default'] = 1
+        df.loc[df['Default'].isnull(), 'Default'] = 0
+        df['Default'] = df['Default'].astype(int)
+        print("Target Column value counts:")
+        print(df['Default'].value_counts())
+        return df
+
     def prepare_credit_risk_data(self) -> DataFrame:
         df_acq = self.read_acquisition_files()
 
@@ -159,17 +146,16 @@ class DataPreparation:
         df_delinq4.drop_duplicates(subset='LoanID', keep='last', inplace=True)
         print("Performance after dropping duplicates shape: ",df_delinq4.shape)
 
-        df = merge_acq_per_files(df_acq, df_delinq4)
+        df = self.merge_acq_per_files(df_acq, df_delinq4)
         del df_acq
         del df_per
         del df_delinq4
 
-        df = create_target(df)
+        df = self.create_target(df)
 
         print("Dropping the columns - 'index','OrDate','OrLTV','MortInsPerc','RelMortInd','FirstPayment', 'Zip','PropertyState'...")
         df.drop(['index','OrDate','OrLTV','MortInsPerc','RelMortInd','FirstPayment', 'Zip','PropertyState'], axis=1, inplace=True)
         print("Shape:", df.shape)
-
-        df = fillnan(df)
-        df = get_dummies(df)
+        df = CentralImputation(NVIDIA_GPU_AVAILABILITY).impute(df)
         return df
+

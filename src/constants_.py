@@ -16,7 +16,7 @@ dtypesDict = OrderedDict([
         ("OrLoanTerm", "int64"),
         ("OrDate", "str"),
         ("FirstPayment", "str"),
-        ("OrLTV", "int64"),#was:float64
+        ("OrLTV", "int64"),
         ("OrCLTV", "float64"),
         ("NumBorrow", "float64"),
         ("DTIRat", "float64"),
