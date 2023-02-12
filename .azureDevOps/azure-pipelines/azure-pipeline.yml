@@ -1,0 +1,43 @@
+trigger:
+- None
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: DeployInfrastructure
+  displayName: Deploy Infrastructure
+  jobs:
+    - job: RunTerraform
+      displayName: Deploy Infrastructure as Code
+      pool:
+        vmImage: 'ubuntu-latest'
+      
+      steps:
+        - task: TerraformInstaller@0
+          inputs:
+            terraformVersion: 'latest'
+        
+        - task: TerraformTaskV3@3
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/.azureDevOps/terraform'
+            backendServiceArm: 'service-connection-creditrisk'
+            backendAzureRmResourceGroupName: 'terraform-backend'
+            backendAzureRmStorageAccountName: 'terraformbackendfr'
+            backendAzureRmContainerName: 'terraform-dev'
+            backendAzureRmKey: 'tf/terraform.tfstate'
+        - task: TerraformTaskV3@3
+          inputs:
+            provider: 'azurerm'
+            command: 'plan'
+            environmentServiceNameAzureRM: 'service-connection-creditrisk'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/.azureDevOps/terraform'
+
+        - task: TerraformTaskV3@3
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            environmentServiceNameAzureRM: 'service-connection-creditrisk'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/.azureDevOps/terraform'
