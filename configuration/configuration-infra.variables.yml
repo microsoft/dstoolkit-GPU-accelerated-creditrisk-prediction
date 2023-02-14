@@ -1,0 +1,11 @@
+variables:
+
+  # Variables for ADO Pipeline
+  BASENAME: crscoring
+  LOCATION: westeurope
+  POSTFIX: dev
+  BACKEND_TERRAFROMSTATE_RG: terraform-backend
+  BACKEND_TERRAFROMSTATE_STORAGE_ACCOUNT: terraformbackendfr
+  BACKEND_TERRAFROMSTATE_CONTAINER_NAME: terraform-dev
+  TERRAFORMSTATE_FILE_NAME: tf/terraform.tfstate
+  SERVICECONNECTION: service-connection-creditrisk
