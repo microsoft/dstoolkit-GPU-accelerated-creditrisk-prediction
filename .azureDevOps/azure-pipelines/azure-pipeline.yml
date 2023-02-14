@@ -1,6 +1,9 @@
 trigger:
 - None
 
+variables:
+- template: ../../configuration/configuration-infra.variables.yml
+
 pool:
   vmImage: ubuntu-latest
 
@@ -8,36 +11,96 @@ stages:
 - stage: DeployInfrastructure
   displayName: Deploy Infrastructure
   jobs:
-    - job: RunTerraform
+    - job: deploy_azure_resources
       displayName: Deploy Infrastructure as Code
       pool:
         vmImage: 'ubuntu-latest'
       
       steps:
         - task: TerraformInstaller@0
+          displayName: Install Terraform
           inputs:
             terraformVersion: 'latest'
         
         - task: TerraformTaskV3@3
+          name: terraformInit
+          displayName: Terrafrom Init
           inputs:
             provider: 'azurerm'
             command: 'init'
             workingDirectory: '$(System.DefaultWorkingDirectory)/.azureDevOps/terraform'
-            backendServiceArm: 'service-connection-creditrisk'
-            backendAzureRmResourceGroupName: 'terraform-backend'
-            backendAzureRmStorageAccountName: 'terraformbackendfr'
-            backendAzureRmContainerName: 'terraform-dev'
-            backendAzureRmKey: 'tf/terraform.tfstate'
+            backendServiceArm: '$(SERVICECONNECTION)'
+            backendAzureRmResourceGroupName: '$(BACKEND_TERRAFROMSTATE_RG)'
+            backendAzureRmStorageAccountName: '$(BACKEND_TERRAFROMSTATE_STORAGE_ACCOUNT)'
+            backendAzureRmContainerName: '$(BACKEND_TERRAFROMSTATE_CONTAINER_NAME)'
+            backendAzureRmKey: '$(TERRAFORMSTATE_FILE_NAME)'
         - task: TerraformTaskV3@3
+          name: terrafromPlan
+          displayName: Terraform Plan
           inputs:
             provider: 'azurerm'
             command: 'plan'
-            environmentServiceNameAzureRM: 'service-connection-creditrisk'
+            environmentServiceNameAzureRM: '$(SERVICECONNECTION)'
             workingDirectory: '$(System.DefaultWorkingDirectory)/.azureDevOps/terraform'
+            commandOptions: -var name=$(BASENAME) -var location=$(LOCATION) -var postfix=$(POSTFIX)
+
 
         - task: TerraformTaskV3@3
+          name: terraformApply
+          displayName: Terraform Apply
           inputs:
             provider: 'azurerm'
             command: 'apply'
-            environmentServiceNameAzureRM: 'service-connection-creditrisk'
+            environmentServiceNameAzureRM: '$(SERVICECONNECTION)'
             workingDirectory: '$(System.DefaultWorkingDirectory)/.azureDevOps/terraform'
+            commandOptions: -var name=$(BASENAME) -var location=$(LOCATION) -var postfix=$(POSTFIX)
+                    
+        - task: TerraformTaskV3@3
+          name: terraformOutput
+          displayName: Terraform Output
+          inputs:
+            provider: 'azurerm'
+            command: 'output'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/.azureDevOps/terraform'
+            environmentServiceNameAzureRM: '$(SERVICECONNECTION)'
+
+        - task: AzurePowerShell@5
+          name: getOutputs
+          displayName: Get Outputs
+          inputs:
+            azureSubscription: '$(SERVICECONNECTION)'
+            ScriptType: 'InlineScript'
+            Inline: |
+              $json = Get-Content $(TerraformOutput.jsonOutputVariablesPath) | Out-String | ConvertFrom-Json
+              Write-Host "##vso[task.setvariable variable=ml_ws;isoutput=true]$($json.ml_name.value)"
+              Write-Host "##vso[task.setvariable variable=rg_name;isoutput=true]$($json.rg_name.value)"
+              Write-Host $json.ml_name.value
+            workingDirectory: '$(System.DefaultWorkingDirectory)/.azureDevOps/terraform'
+            azurePowerShellVersion: 'LatestVersion'   
+
+- stage: createEnvironment
+  displayName: Create Environment from Docker File
+  lockBehavior: sequential
+  dependsOn: DeployInfrastructure
+  condition: succeeded()
+  jobs:
+    - job: PushDockerImage
+      variables: 
+        WS: $[stageDependencies.DeployInfrastructure.deploy_azure_resources.outputs['getOutputs.ml_ws']]
+        RG: $[stageDependencies.DeployInfrastructure.deploy_azure_resources.outputs['getOutputs.rg_name']]
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+        - task: AzureCLI@2
+          name: PushDockerEnv
+          displayName: Push Docker Environment to ACR
+          inputs:
+            azureSubscription: '$(SERVICECONNECTION)'
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              az configure --default workspace=$(WS) group=$(RG)
+              az extension add --name ml
+              az ml environment create --file configuration/environment/docker-context.yml
+            workingDirectory: '$(System.DefaultWorkingDirectory)'
+
