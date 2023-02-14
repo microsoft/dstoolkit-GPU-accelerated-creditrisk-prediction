@@ -93,7 +93,7 @@ stages:
       steps:
         - task: AzureCLI@2
           name: PushDockerEnv
-          displayName: Push Docker Environment to ACR
+          displayName: Create Docker Environment in AML
           inputs:
             azureSubscription: '$(SERVICECONNECTION)'
             scriptType: 'bash'
