@@ -75,3 +75,12 @@ module "local_container_registry" {
 
   is_sec_module = false
 }
+
+# Cluster
+
+module "aml_cluster" {
+  source = "./machine-learning-compute-cluster/"
+
+  location = var.location
+  machine_learning_workspace_id = module.machine_learning_workspace.id 
+}

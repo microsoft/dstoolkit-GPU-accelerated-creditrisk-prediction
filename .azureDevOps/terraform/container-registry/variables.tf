@@ -46,7 +46,7 @@ variable "admin_enabled" {
 variable "public_network_access_enabled" {
   type        = bool
   description = "Whether public network access is allowed for the container registry"
-  default     = false
+  default     = true
 }
 
 variable "private_dns_zone_ids" {
@@ -58,5 +58,5 @@ variable "private_dns_zone_ids" {
 variable "firewall_default_action" {
   type        = string
   description = "Specifies the default action of allow or deny when no other rules match"
-  default     = "Deny"
+  default     = "Allow"
 }
