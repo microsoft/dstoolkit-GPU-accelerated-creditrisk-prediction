@@ -34,6 +34,7 @@ stages:
             backendAzureRmStorageAccountName: '$(BACKEND_TERRAFROMSTATE_STORAGE_ACCOUNT)'
             backendAzureRmContainerName: '$(BACKEND_TERRAFROMSTATE_CONTAINER_NAME)'
             backendAzureRmKey: '$(TERRAFORMSTATE_FILE_NAME)'
+
         - task: TerraformTaskV3@3
           name: terrafromPlan
           displayName: Terraform Plan
@@ -43,7 +44,6 @@ stages:
             environmentServiceNameAzureRM: '$(SERVICECONNECTION)'
             workingDirectory: '$(System.DefaultWorkingDirectory)/.azureDevOps/terraform'
             commandOptions: -var name=$(BASENAME) -var location=$(LOCATION) -var postfix=$(POSTFIX)
-
 
         - task: TerraformTaskV3@3
           name: terraformApply
