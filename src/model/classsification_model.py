@@ -1,8 +1,8 @@
 import os
 
-import xgbost as xgb
+import xgboost as xgb
 
-from src.utils import timeit
+from utils import timeit
 
 
 class XGBClassificationModel:
@@ -19,6 +19,6 @@ class XGBClassificationModel:
         return self
 
     def predict(self, X):
-        assert self.model is None, "Fit the model first to make the predictions."
+        assert self.model is not None, "Fit the model first to make the predictions."
         probas = self.model.predict(xgb.DMatrix(X), pred_contribs=False).round(2)
         return probas

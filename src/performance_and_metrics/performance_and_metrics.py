@@ -4,9 +4,10 @@ import traceback
 import matplotlib.pyplot as plt
 import shap
 from sklearn import metrics
+from sklearn.metrics import classification_report, confusion_matrix
 from xgboost import plot_importance
 
-from src.utils import timeit
+from utils import timeit
 
 
 class ClassificationReport:
@@ -48,13 +49,13 @@ class ClassificationReport:
     @timeit
     def generate_and_log_shap_plot(self, model, X):
         try:
-            if self.nvidia_gpu_available:
-                model.set_param({"predictor": "gpu_predictor"})
-            else:
-                model.set_param({"predictor": "cpu_predictor"})
+            #if self.nvidia_gpu_available:
+            #    model.set_param({"predictor": "gpu_predictor"})
+            #else:
+            #    model.set_param({"predictor": "cpu_predictor"})
 
-            expl = shap.TreeExplainer(model)
-            shap_values = expl.shap_values(X)
+            explainer = shap.TreeExplainer(model)
+            shap_values = explainer.shap_values(X)
             print("Shape of SHAP values:", shap_values.shape)
             
             plt.figure()
@@ -66,15 +67,17 @@ class ClassificationReport:
             shap_plot_path = os.path.join(self._asset_path, 'shap.png')
             plt.savefig(shap_plot_path, bbox_inches='tight')
             self.run.log_image(name='SHAP', path=shap_plot_path, plot=None, description='SHAP')
-
+            return shap_values, explainer
         except Exception as e:
             print("Error in generating/logging SHAP plot/values.")
             traceback.print_exc()
+            return (None, None)
     
-    def log_shap_scatter_plot(self, shap_values):
+    def log_shap_scatter_plot(self, shap_values, X):
         try:
             plt.figure()
-            shap_scatter_plot = shap.plots.scatter(shap_values[:,0])            
+            shap_scatter_plot = shap.dependence_plot(0, shap_values, X)
+            #shap_scatter_plot = shap.plots.scatter(shap_values.iloc[:,0])            
             shap_scatter_plot_path = os.path.join(self._asset_path, 'shap_scatter.png')
             plt.savefig(shap_scatter_plot_path, bbox_inches='tight')
             self.run.log_image(name='SHAP_Scatter', path=shap_scatter_plot_path, plot=None, description='SHAP Scatter Plot')
@@ -87,7 +90,7 @@ class ClassificationReport:
             importance_fig_path = os.path.join(self._asset_path, 'importance.png')
             fig, ax = plt.subplots( nrows=1, ncols=1)
             x = plt.rcParams["figure.figsize"] = [10,6]
-            ax = plot_importance(model, max_num_features=10, feature_names=feature_names)
+            ax = plot_importance(model, max_num_features=10)
             ax.figure.tight_layout()
             ax.figure.savefig(importance_fig_path)
             self.run.log_image(name='Importance Scores', path=importance_fig_path, plot=None, description='XGBoost Importance Scores')

@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Tuple
 
-from src.imputation.imputation import Imputation
-from src.utils import is_nvidia_gpu_available
+from imputation.imputation import Imputation
+from utils import is_nvidia_gpu_available
 
 NVIDIA_GPU_AVAILABILITY = is_nvidia_gpu_available()
 if NVIDIA_GPU_AVAILABILITY:
