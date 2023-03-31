@@ -1,9 +1,8 @@
-import pandas as pd
-import numpy as np
 import os
+import tarfile
 import time
 import urllib.request
-import tarfile
+
 
 def extract_files(fname, extraction_dir):
     tar = tarfile.open(fname, "r:gz")
@@ -24,7 +23,6 @@ def extract_files(fname, extraction_dir):
 def download_from_url(url, dir_):
     if not os.path.exists(dir_):
         os.makedirs(dir_)
-    # url = "http://rapidsai-data.s3-website.us-east-2.amazonaws.com/notebook-mortgage-data/mortgage_2000-2016.tgz"
     fname = url.split("/")[-1]
     fname = os.path.join(dir_, fname)
 
