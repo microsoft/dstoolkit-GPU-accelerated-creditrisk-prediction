@@ -12,3 +12,9 @@ variable "postfix" {
     type    = string
     default = "dev"
 }
+
+resource "random_string" "postfix" {
+  length  = 3
+  special = false
+  upper   = false
+}

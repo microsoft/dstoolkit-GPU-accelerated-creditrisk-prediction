@@ -47,7 +47,7 @@ module "local_storage_account" {
 module "local_key_vault" {
   source = "./key-vault/"
 
-  basename = "${var.name}-${var.postfix}"
+  basename = "${var.name}-${var.postfix}-${random_string.postfix.result}"
   rg_name = module.local_rg.name
   location = var.location
 
@@ -69,7 +69,7 @@ module "local_application_insights" {
 module "local_container_registry" {
   source = "./container-registry/"
 
-  basename = "${var.name}-${var.postfix}"
+  basename = "${var.name}-${var.postfix}-${random_string.postfix.result}"
   rg_name = module.local_rg.name
   location = var.location
 
