@@ -1,11 +1,11 @@
 variables:
 
   # Variables for ADO Pipeline
-  BASENAME: crscoring
+  BASENAME: credit-risk
   LOCATION: westeurope
   POSTFIX: dev
-  BACKEND_TERRAFROMSTATE_RG: terraform-backend
-  BACKEND_TERRAFROMSTATE_STORAGE_ACCOUNT: terraformbackendfr
-  BACKEND_TERRAFROMSTATE_CONTAINER_NAME: terraform-dev
-  TERRAFORMSTATE_FILE_NAME: tf/terraform.tfstate
-  SERVICECONNECTION: service-connection-creditrisk
+  BACKEND_TERRAFROMSTATE_RG: insert your resource group name
+  BACKEND_TERRAFROMSTATE_STORAGE_ACCOUNT: insert your storage account name
+  BACKEND_TERRAFROMSTATE_CONTAINER_NAME: insert your container name
+  TERRAFORMSTATE_FILE_NAME: insert your terraform state file name
+  SERVICECONNECTION: insert your service connection name
