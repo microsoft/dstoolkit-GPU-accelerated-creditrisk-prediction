@@ -31,3 +31,4 @@ def get_dataframe_summary(f):
         print(df.info())
         return df
     return summarizer
+
