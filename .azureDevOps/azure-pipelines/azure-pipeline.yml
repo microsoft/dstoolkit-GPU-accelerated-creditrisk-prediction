@@ -1,5 +1,5 @@
 trigger:
-- None
+- main
 
 variables:
 - template: ../../configuration/configuration-infra.variables.yml
@@ -96,11 +96,47 @@ stages:
           displayName: Create Docker Environment in AML
           inputs:
             azureSubscription: '$(SERVICECONNECTION)'
-            scriptType: 'bash'
             scriptLocation: 'inlineScript'
+            scriptType: 'bash'
             inlineScript: |
               az configure --default workspace=$(WS) group=$(RG)
               az extension add --name ml
               az ml environment create --file configuration/environment/docker-context.yml
             workingDirectory: '$(System.DefaultWorkingDirectory)'
 
+- stage: RunCreditRiskScoringPipeline
+  displayName: Run Credit Risk Scoring Pipeline
+  dependsOn: 
+    - createEnvironment
+    - DeployInfrastructure
+  condition: succeeded()
+  jobs:
+    - job: RunCreditRiskScoring
+      variables: 
+        WS: $[stageDependencies.DeployInfrastructure.deploy_azure_resources.outputs['getOutputs.ml_ws']]
+        RG: $[stageDependencies.DeployInfrastructure.deploy_azure_resources.outputs['getOutputs.rg_name']]
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+        - task: UsePythonVersion@0
+          displayName: 'Use Python 3.8'
+          inputs:
+            versionSpec: '3.8'
+
+            
+        - task: AzureCLI@2
+          displayName: 'Run Credit Risk Scoring'
+          inputs:
+            azureSubscription: '$(SERVICECONNECTION)'
+            scriptLocation: 'inlineScript'
+            scriptType: 'bash'
+            inlineScript: |
+              export subscription_id=$(az account show --query id -o tsv)
+              export group=$(RG)
+              export workspace=$(WS)
+              echo $subscription_id
+              echo $group
+              echo $workspace
+              python -m pip install --upgrade pip && python -m pip install azureml-pipeline
+              python operation/build_pipeline.py --subscription_id $subscription_id --resource_group $group --workspace_name $workspace
+            workingDirectory: '$(System.DefaultWorkingDirectory)'

@@ -62,9 +62,3 @@ variable "private_dns_zone_ids" {
   description = "Specifies the list of Private DNS Zones to include"
   default     = []
 }
-
-variable "image_build_compute_name" {
-  type        = string
-  description = "The compute name for image build of the Machine Learning Workspace"
-  default     = "image-builder"
-}

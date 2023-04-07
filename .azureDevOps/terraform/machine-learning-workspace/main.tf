@@ -15,7 +15,6 @@ resource "azurerm_machine_learning_workspace" "adl_mlw" {
 
   public_network_access_enabled = var.is_sec_module ? false : true
 
-  image_build_compute_name = var.image_build_compute_name
 
   identity {
     type = "SystemAssigned"
