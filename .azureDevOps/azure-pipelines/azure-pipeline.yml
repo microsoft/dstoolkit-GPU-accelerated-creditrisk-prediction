@@ -1,5 +1,5 @@
 trigger:
-- main
+- None
 
 variables:
 - template: ../../configuration/configuration-infra.variables.yml
