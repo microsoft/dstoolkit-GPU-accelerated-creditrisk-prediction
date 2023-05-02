@@ -183,7 +183,7 @@ class ClassificationReport:
 
 
 
-    # waterfall plot for a given row in the dataframe
+    # waterfall plot for a given row in the dataframe 
     def log_waterfall_plot(self,model,shap_values,X,row): 
         try:
             start = time.time()

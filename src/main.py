@@ -37,16 +37,6 @@ from performance_and_metrics.performance_and_metrics import \
 import shap
 import joblib
 
-
-# from azureml.core import Workspace
-
-# subscription_id = "your-subscription-id"
-# resource_group = "your-resource-group"
-# workspace_name = "your-workspace-name"
-
-
-# ws = Workspace.get(name="credit-risk-ws", subscription_id = "c12ebfc0-4a3e-4abd-bd2c-0e4ad807fbf5",resource_group="credit-risk-rg")
-
 run = Run.get_context()
 data_folder_path = sys.argv[1]
 years = sys.argv[2]
