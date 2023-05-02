@@ -22,3 +22,5 @@ RUN pip install azureml-core
 RUN pip install azureml-defaults
 RUN pip uninstall -y protobuf && \
     pip install protobuf==3.16.0
+RUN pip install streamlit
+RUN pip install streamlit-shap
