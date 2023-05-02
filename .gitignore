@@ -351,3 +351,6 @@ MigrationBackup/
 # Terraform states and plans
 *.terraform
 *.terraform.lock.hcl
+# venvs
+*.venv
+*/config.json

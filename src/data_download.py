@@ -1,7 +1,9 @@
+import argparse
 import os
 import tarfile
 import time
 import urllib.request
+from azureml.core import Run
 
 
 def extract_files(fname, extraction_dir):
@@ -49,3 +51,43 @@ def download_from_url(url, dir_):
 def download_and_extract_data(url, dir_):
     fname = download_from_url(url, dir_)    
     extract_files(fname, dir_)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--data-url",
+        type=str,
+        help="URL of the data to download",
+        default="http://rapidsai-data.s3-website.us-east-2.amazonaws.com/notebook-mortgage-data/mortgage_2000-2016.tgz",
+    )
+    parser.add_argument(
+        "--data_dir",
+        type=str,
+        help="Directory to download the data to",
+        default="data",
+    )
+    args = parser.parse_args()
+    return args
+
+def main():
+    run = Run.get_context()
+    ws = run.experiment.workspace
+    args = parse_args()
+    print('Hello')
+    cwd = os.getcwd()
+    print(f"Current working directory: {cwd}")
+    data_folder = os.path.join(cwd, args.data_dir)
+    download_and_extract_data(args.data_url, data_folder)
+    acq_file_folder = os.path.join(data_folder, "acq/")
+    perf_file_folder = os.path.join(data_folder, "perf/")
+    acq_files = [os.path.join(acq_file_folder, f) for f in os.listdir(acq_file_folder)]
+    perf_files = [os.path.join(perf_file_folder, f) for f in os.listdir(perf_file_folder)]
+    datastore = ws.get_default_datastore()
+    datastore.upload_files(acq_files, target_path='credit_risk_data/acq/', overwrite=True, show_progress = True)
+    datastore.upload_files(perf_files, target_path='credit_risk_data/perf/', overwrite=True, show_progress = True)
+    print("Uploaded files to datastore")
+    run.complete()
+
+if __name__ == "__main__":
+    main()
