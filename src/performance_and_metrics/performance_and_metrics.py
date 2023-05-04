@@ -54,7 +54,6 @@ class ClassificationReport:
             #    model.set_param({"predictor": "gpu_predictor"})
             #else:
             #    model.set_param({"predictor": "cpu_predictor"})
-
             explainer = shap.TreeExplainer(model)
             shap_values = explainer.shap_values(X)
             print("Shape of SHAP values:", shap_values.shape)
@@ -196,6 +195,7 @@ class ClassificationReport:
             print(round(time.time()-start, 3),'secs time for SHAP waterfall plot')   
         except Exception as e:
             print("Error in generating/logging SHAP waterfall plot")
+
 
 
 

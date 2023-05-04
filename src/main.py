@@ -95,7 +95,7 @@ y_test    = DataFrame(data=y_test,columns=['Default'])
 print(X_test_df.shape,type(X_test_df))
 
 
-#shap plots 
+# adding shap plots
 shap_values, explainer = reporter.generate_and_log_shap_plot(xgb_model.model, X_test_df)
 reporter.log_importance_plot(xgb_model.model, Xcolumns)
 reporter.log_single_dependence_plots(shap_values ,"OrLoanTerm","CreditScore",X_test_df)
