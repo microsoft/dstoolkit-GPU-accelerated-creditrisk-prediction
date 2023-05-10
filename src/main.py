@@ -25,13 +25,17 @@ import xgboost as xgb
 from azureml.core.run import Run
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
-
+import os
 from constants_ import DATA_DOWNLOAD_URL, PERFORMANCE_COLS
 from data_download import download_and_extract_data
 from data_preparation.data_preparation import DataPreparation
 from model.classsification_model import XGBClassificationModel
 from performance_and_metrics.performance_and_metrics import \
     ClassificationReport
+# import streamlit as st
+# from streamlit_shap import st_shap
+import shap
+import joblib
 
 run = Run.get_context()
 data_folder_path = sys.argv[1]
@@ -90,6 +94,13 @@ X_test_df = DataFrame(data=X_test,columns=Xcolumns)
 y_test    = DataFrame(data=y_test,columns=['Default'])
 print(X_test_df.shape,type(X_test_df))
 
+
+# adding shap plots
 shap_values, explainer = reporter.generate_and_log_shap_plot(xgb_model.model, X_test_df)
 reporter.log_importance_plot(xgb_model.model, Xcolumns)
+reporter.log_single_dependence_plots(shap_values ,"OrLoanTerm","CreditScore",X_test_df)
+reporter.log_dependence_plots(shap_values ,5,X_test_df)
+reporter.log_force_plot(xgb_model.model,100,X_test_df)
+reporter.log_decision_plot(xgb_model.model,X_test_df,100)
+reporter.log_waterfall_plot(xgb_model.model,shap_values,X_test_df,100)
 
