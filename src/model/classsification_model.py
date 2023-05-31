@@ -2,7 +2,14 @@ import os
 
 import xgboost as xgb
 
-from utils import timeit
+from utils import is_nvidia_gpu_available, timeit
+
+NVIDIA_GPU_AVAILABILITY = is_nvidia_gpu_available()
+
+if NVIDIA_GPU_AVAILABILITY:
+    from cudf import DataFrame, Series
+else:
+    from pandas import DataFrame, Series
 
 
 class XGBClassificationModel:
@@ -22,7 +29,7 @@ class XGBClassificationModel:
         self.model = None
 
     @timeit
-    def fit(self, X_train: DaaFrame, y_train: Series) -> object:
+    def fit(self, X_train: DataFrame, y_train: Series) -> object:
         """Fit the model to the training data.
 
         Args:

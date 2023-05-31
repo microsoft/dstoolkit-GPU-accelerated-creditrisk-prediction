@@ -40,15 +40,13 @@ def main() -> None:
         from cudf import DataFrame, get_dummies
     else:
         from pandas import DataFrame, get_dummies
-    from azureml.core import Run
+    from azureml.core import Dataset, Run
     from sklearn.model_selection import train_test_split
 
     from constants_ import (
         BACKUP_DATA_FOLDER_NAME,
-        DATA_DOWNLOAD_URL,
         DATASTORE_FOLDER_NAME,
         ID_COL_NAME,
-        PERFORMANCE_COLS,
         TARGET_COL_NAME,
     )
     from data_preparation.data_preparation import DataPreparation

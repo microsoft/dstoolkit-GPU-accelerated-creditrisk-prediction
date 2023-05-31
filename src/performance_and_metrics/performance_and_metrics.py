@@ -1,11 +1,13 @@
 import os
 import time
 import traceback
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import shap
 import xgboost as xgb
+from azureml.core import Run
 from sklearn import metrics
 from sklearn.metrics import classification_report, confusion_matrix
 from xgboost import plot_importance
@@ -79,7 +81,7 @@ class ClassificationReport:
     @timeit
     def generate_and_log_shap_plot(
         self, model: object, X: object
-    ) -> tuple(shap.TreeExplainer.shap_values, shap.TreeExplainer):
+    ) -> Tuple[shap.TreeExplainer.shap_values, shap.TreeExplainer]:
         """
         This method is used to generate and log the SHAP plot.
 
@@ -88,7 +90,7 @@ class ClassificationReport:
             X (object): Dataframe containing features.
 
         Returns:
-            tuple(shap.TreeExplainer.shap_values, shap.TreeExplainer): SHAP values and explainer object.
+            Tuple[shap.TreeExplainer.shap_values, shap.TreeExplainer]: SHAP values and explainer object.
         """
         try:
             explainer = shap.TreeExplainer(model)
@@ -392,22 +394,28 @@ class ClassificationReport:
         Returns:
             tuple: classification report, confusion matrix and ROC AUC score.
         """
-        predictions = probas > self.threshold
-        classification_report_, conf_matrix, roc_auc = self._fetch_metrics(
-            y_true, predictions
-        )
-
+        try:
+            predictions = probas > self.threshold
+            classification_report_, conf_matrix, roc_auc = self._fetch_metrics(
+                y_true, predictions
+            )
+        except Exception as e:
+            print("Error in generating classification report")
+            traceback.print_exc()
+            return None, None, None
         try:
             print("\nTest Classification Report:\n", classification_report_)
         except Exception as e:
             print("Error in logging classification report")
             traceback.print_exc()
+            return None, None, None
 
         try:
             print("\nTest Confusion Matrix:\n", conf_matrix)
         except Exception as e:
             print("Error in logging confusion matrix")
             traceback.print_exc()
+            return None, None, None
 
         print("\nTest ROC AUC Score: ", roc_auc)
 
