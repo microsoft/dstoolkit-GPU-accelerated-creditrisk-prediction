@@ -50,6 +50,23 @@ However, you are encouraged to add your ML algorithm by creating a class similar
 
 This code has been adapted to Azure from the awesome [Nvidia's repository](https://github.com/NVIDIA/fsi-samples/tree/main/credit_default_risk).
 
+## Getting Started
+
+To get started with this project, follow these steps:
+1. Clone the repository to Azure ML workspace or your local machine.
+2. Create the environment. Dockerfile can be found [here](configuration/environment/docker/Dockerfile).
+3. Download the data by running [download_data](download_data.ipynb).
+4. [Train](cudf_credit_risk.ipynb) the model leveraging gpu acceleration.
+
+## Prerequisites
+
+- Access to an Azure subscription
+- Access to an Azure ML workspace
+
+## Deploy Infrastructure
+
+A guide to deploy the infrastructure for this project can be found [here](.azureDevOps/Deploy-Infrastructure.md).
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
