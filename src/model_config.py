@@ -5,3 +5,4 @@ HYPERPARAMS = {
     "max_depth": 10,
     "scale_pos_weight": 5.5,
 }
+TEST_SIZE = 0.25

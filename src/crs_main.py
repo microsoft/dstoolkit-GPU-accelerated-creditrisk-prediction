@@ -1,7 +1,6 @@
 import argparse
-import sys
 
-from model_settings import CLASSIFICATION_PROBA_THRESHOLD, HYPERPARAMS
+from model_config import CLASSIFICATION_PROBA_THRESHOLD, HYPERPARAMS, TEST_SIZE
 from utils import download_from_datastore, is_nvidia_gpu_available
 
 
@@ -78,7 +77,7 @@ def main() -> None:
 
     print("Splitting into train and test sets...")
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.25, random_state=0
+        X, y, test_size=TEST_SIZE, random_state=0
     )
     del X, y
     print("Types of X and y:")
