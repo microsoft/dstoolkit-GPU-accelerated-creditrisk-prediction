@@ -5,6 +5,30 @@ This accelerator demos acceleration on GPUs for structured data by leveraging Nv
 * Uses gpu acceleration to significantly reduce running time on huge structured data.
 * [SHAP](https://github.com/slundberg/shap) to explain the predictions.
 
+## Table of Contents
+
+- [Benchmark and Motivation](#benchmark-and-motivation)
+- [Getting Started](#getting-started)
+- [Prerequisites](#prerequisites)
+- [Deploy Infrastructure](#deploy-infrastructure)
+- [Code Structure](#code-structure)
+- [Modeling](#modeling)
+- [Acknowledgements](#acknowledgements)
+- [Contributing](#contributing)
+- [Trademarks](#trademarks)
+
+## Benchmark and Motivation
+
+We benchmarked how the [Rapids](https://github.com/rapidsai) suite of libraries with GPU acceleration compares to a power CPU for a typical data science workflow on large datasets. It is observed that the GPU-accelerated workflow is 6-10x faster than the CPU-based workflow depending on the size of the dataset. Bigger the dataset, more the speedup. All this is achieved with a few changes in import statements.
+
+The following tables shows the comparison of the two workflows.
+![Benchmark on a Big Dataset](benchmarks/benchmark_results1.png)
+
+The speedup is even more significant for a larger dataset.
+![Benchmark on a Bigger Dataset](benchmarks/banchmark_results2.png)
+
+All this at less than half the cost!
+
 ## Getting Started
 
 To get started with this project, follow these steps:
@@ -49,23 +73,6 @@ However, you are encouraged to add your ML algorithm by creating a class similar
 ## Acknowledgements
 
 This code has been adapted to Azure from the awesome [Nvidia's repository](https://github.com/NVIDIA/fsi-samples/tree/main/credit_default_risk).
-
-## Getting Started
-
-To get started with this project, follow these steps:
-1. Clone the repository to Azure ML workspace or your local machine.
-2. Create the environment. Dockerfile can be found [here](configuration/environment/docker/Dockerfile).
-3. Download the data by running [download_data](download_data.ipynb).
-4. [Train](cudf_credit_risk.ipynb) the model leveraging gpu acceleration.
-
-## Prerequisites
-
-- Access to an Azure subscription
-- Access to an Azure ML workspace
-
-## Deploy Infrastructure
-
-A guide to deploy the infrastructure for this project can be found [here](.azureDevOps/Deploy-Infrastructure.md).
 
 ## Contributing
 
