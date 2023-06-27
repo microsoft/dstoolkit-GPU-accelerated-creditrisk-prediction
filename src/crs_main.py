@@ -103,6 +103,14 @@ def main() -> None:
     reporter.generate_metrics_plots(
         X_test_df, y_test, xgb_model.model, classification_probas
     )
+
+    reporter.stack_powerBi_table(
+        model=xgb_model.model,
+        X=X_test_df,
+        y=y_test,
+        categorical_cols=[],
+        save_Table=True
+    )
     run.complete()
 
 
