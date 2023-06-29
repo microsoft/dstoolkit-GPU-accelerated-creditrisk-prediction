@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 from model_config import CLASSIFICATION_PROBA_THRESHOLD, HYPERPARAMS, TEST_SIZE
 from utils import download_from_datastore, is_nvidia_gpu_available
@@ -30,7 +31,12 @@ def main() -> None:
     Returns:
         None
     """
-    args = parse_args()
+    try:
+        args = parse_args()
+        years = args.years
+    except:
+        years = sys.argv[1]
+    years = list(map(int, years.split(",")))
 
     NVIDIA_GPU_AVAILABILITY = is_nvidia_gpu_available()
     print("NVIDIA GPU Availability: ", NVIDIA_GPU_AVAILABILITY)
@@ -39,6 +45,7 @@ def main() -> None:
         from cudf import DataFrame, get_dummies
     else:
         from pandas import DataFrame, get_dummies
+    import pandas as pd
     from azureml.core import Dataset, Run
     from sklearn.model_selection import train_test_split
 
@@ -46,6 +53,7 @@ def main() -> None:
         BACKUP_DATA_FOLDER_NAME,
         DATASTORE_FOLDER_NAME,
         ID_COL_NAME,
+        N_SAMPLES,
         TARGET_COL_NAME,
     )
     from data_preparation.data_preparation import DataPreparation
@@ -53,8 +61,6 @@ def main() -> None:
     from performance_and_metrics.performance_and_metrics import ClassificationReport
 
     run = Run.get_context()
-    years = args.years
-    years = list(map(int, years.split(",")))
     ws = run.experiment.workspace
     datastore = ws.get_default_datastore()
 
@@ -88,9 +94,12 @@ def main() -> None:
 
     if NVIDIA_GPU_AVAILABILITY:
         X_train, y_train = (cupy.asnumpy(X_train), cupy.asnumpy(y_train))
-        X_test, y_test = (cupy.asnumpy(X_test), cupy.asnumpy(y_test))
-    X_test_df = DataFrame(data=X_test, columns=Xcolumns)
-    y_test = DataFrame(data=y_test, columns=[TARGET_COL_NAME])
+        X_test, y_test = (
+            cupy.asnumpy(X_test[:N_SAMPLES]),
+            cupy.asnumpy(y_test[:N_SAMPLES]),
+        )
+    X_test_df = pd.DataFrame(data=X_test, columns=Xcolumns)
+    y_test = pd.DataFrame(data=y_test, columns=[TARGET_COL_NAME])
 
     xgb_model = XGBClassificationModel(NVIDIA_GPU_AVAILABILITY, HYPERPARAMS).fit(
         X_train, y_train
@@ -103,15 +112,6 @@ def main() -> None:
     reporter.generate_metrics_plots(
         X_test_df, y_test, xgb_model.model, classification_probas
     )
-
-    reporter.stack_powerBi_table(
-        model=xgb_model.model,
-        X=X_test_df,
-        y=y_test,
-        categorical_cols=[],
-        save_Table=True
-    )
-    run.complete()
 
 
 if __name__ == "__main__":

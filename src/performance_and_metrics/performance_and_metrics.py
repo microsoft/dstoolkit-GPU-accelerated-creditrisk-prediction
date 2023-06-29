@@ -2,9 +2,10 @@ import os
 import time
 import traceback
 from typing import Tuple
-import pandas as pd
+
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import shap
 import xgboost as xgb
 from azureml.core import Run
@@ -98,10 +99,7 @@ class ClassificationReport:
             print("Shape of SHAP values:", shap_values.shape)
 
             plt.figure()
-            if self.nvidia_gpu_available:
-                shap_plot = shap.summary_plot(shap_values, X.to_pandas(), show=False)
-            else:
-                shap_plot = shap.summary_plot(shap_values, X, show=False)
+            shap_plot = shap.summary_plot(shap_values, X, show=False)
 
             shap_plot_path = os.path.join(self._asset_path, "shap.png")
             plt.savefig(shap_plot_path, bbox_inches="tight")
@@ -138,47 +136,6 @@ class ClassificationReport:
             )
         except Exception as e:
             print("Error in generating/logging SHAP scatter plot")
-            traceback.print_exc()
-
-    def create_powerbi_table_shap(self, model: object, X: object, y: object, categorical_cols: list, save_Table=True) -> None:
-        try:
-            expl = shap.TreeExplainer(model)
-            shap_values = expl.shap_values(X)
-            shap_df = pd.DataFrame(shap_values, columns=[x+'_shap' for x in X.columns])
-            shap_df['prediction'] = model.predict(X)
-            shap_df['actual'] = y
-            shap_df['id'] = X.index
-            if categorical_cols is not None:
-                for col in categorical_cols:
-                    cols_feat = [x for x in shap_df.columns if col in x]
-                    shap_df[col+'_shap'] = shap_df[cols_feat].sum(axis=1)
-                    shap_df.drop(columns=cols_feat, inplace=True)
-
-            if save_Table:
-                power_bi_path = os.path.join(self._asset_path, "shap_values.csv")
-                shap_df.to_csv(power_bi_path, index=False)
-                self.run.upload_file(name="shap_values.csv", path_or_stream=power_bi_path)
-
-            else:
-                return shap_df
-
-        except Exception as e:
-            print("Error in generating/logging SHAP scatter plot")
-            traceback.print_exc()
-        
-    def stack_powerBi_table(self, model: object, X: object, y: object, categorical_cols: list, save_Table=True):
-        shap_df = self.create_powerbi_table_shap(model, X, y, categorical_cols, save_Table=save_Table)
-        # Drop the columns with prediction and actual
-        try:
-            shap_df.drop(columns=['prediction', 'actual'], inplace=True)
-            shap_values_df = shap_df.stack().reset_index()
-            shap_values_df.columns = ['id', 'feature', 'shap_value']
-            if save_Table:
-                power_bi_path = os.path.join(self._asset_path, "shap_values_stacked.csv")
-                shap_values_df.to_csv(power_bi_path, index=False)
-                self.run.upload_file(name="shap_values_stacked.csv", path_or_stream=power_bi_path)
-        except Exception as e:
-            print("Error in stacking the shap values")
             traceback.print_exc()
 
     def log_importance_plot(self, model: object) -> None:
@@ -226,9 +183,7 @@ class ClassificationReport:
         try:
             start = time.time()
             plt.figure()
-            shap.dependence_plot(
-                feature, shap_values, X.to_pandas(), interaction_index=index
-            )
+            shap.dependence_plot(feature, shap_values, X, interaction_index=index)
             shap_plot_path = os.path.join(
                 self._asset_path, "shap_dependence_feature_{}.png".format(feature)
             )
@@ -272,7 +227,7 @@ class ClassificationReport:
             for feat in top_feats:
                 start = time.time()
                 plt.figure()
-                shap.dependence_plot(feat, shap_values, X.to_pandas())
+                shap.dependence_plot(feat, shap_values, X)
                 shap_plot_path = os.path.join(
                     self._asset_path, "shap_dependence_imp_feature_{}.png".format(i)
                 )
@@ -312,7 +267,7 @@ class ClassificationReport:
             shap.force_plot(
                 expl.expected_value,
                 shap_values[row, :],
-                X.to_pandas().iloc[row, :],
+                X.iloc[row, :],
                 show=False,
                 matplotlib=True,
             )
@@ -353,7 +308,7 @@ class ClassificationReport:
             shap.decision_plot(
                 expl.expected_value,
                 shap_values[0:n],
-                feature_names=list(X.to_pandas().columns),
+                feature_names=list(X.columns),
             )
             shap_plot_path = os.path.join(self._asset_path, "shapdecision.png")
             plt.savefig(shap_plot_path, bbox_inches="tight")
