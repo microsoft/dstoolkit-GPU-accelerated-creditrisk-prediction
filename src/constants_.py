@@ -104,4 +104,15 @@ TARGET_COL_NAME = "Default"
 
 ID_COL_NAME = "LoanID"
 
-N_SAMPLES = 1000
+N_SAMPLES = 37000
+
+CATEGORICAL_COLS = [
+    "Channel",
+    "SellerName",
+    "FTHomeBuyer",
+    "LoanPurpose",
+    "PropertyType",
+    "OccStatus",
+    "MortInsType",
+    "ProductType"
+]

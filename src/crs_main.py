@@ -55,6 +55,7 @@ def main() -> None:
         ID_COL_NAME,
         N_SAMPLES,
         TARGET_COL_NAME,
+        CATEGORICAL_COLS,
     )
     from data_preparation.data_preparation import DataPreparation
     from model.classsification_model import XGBClassificationModel
@@ -68,13 +69,13 @@ def main() -> None:
         data_folder_path = Dataset.File.from_files(
             datastore.path(DATASTORE_FOLDER_NAME)
         ).as_mount()
-        df = DataPreparation(data_folder_path, years).prepare_credit_risk_data()
+        df_raw = DataPreparation(data_folder_path, years).prepare_credit_risk_data()
     except:
         print("Downloading data from datastore...")
         download_from_datastore(datastore, BACKUP_DATA_FOLDER_NAME)
-        df = DataPreparation(BACKUP_DATA_FOLDER_NAME, years).prepare_credit_risk_data()
+        df_raw = DataPreparation(BACKUP_DATA_FOLDER_NAME, years).prepare_credit_risk_data()
 
-    df = get_dummies(df)
+    df = get_dummies(df_raw)
 
     y = df[TARGET_COL_NAME].values
     X = df.drop([TARGET_COL_NAME, ID_COL_NAME], axis=1).values
@@ -113,6 +114,16 @@ def main() -> None:
         X_test_df, y_test, xgb_model.model, classification_probas
     )
 
+    reporter.stack_powerBi_table(
+        model=xgb_model.model,
+        X_test_df=X_test_df,
+        y_test=y_test,
+        probas=classification_probas,
+        X_raw=df_raw,
+        categorical_cols=CATEGORICAL_COLS,
+        save_Table=True
+    )
+    run.complete()
 
 if __name__ == "__main__":
     main()
