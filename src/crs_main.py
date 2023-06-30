@@ -116,8 +116,8 @@ def main() -> None:
 
     reporter.stack_powerBi_table(
         model=xgb_model.model,
-        X_test_df=X_test_df,
-        y_test=y_test,
+        X=X_test_df,
+        y=y_test,
         probas=classification_probas,
         X_raw=df_raw,
         categorical_cols=CATEGORICAL_COLS,
