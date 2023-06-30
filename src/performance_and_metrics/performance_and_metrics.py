@@ -443,7 +443,7 @@ class ClassificationReport:
                     shap_df.drop(columns=cols_feat, inplace=True)
             try:
                 shap_df_merged = pd.merge(shap_df, X_raw, left_on="id", right_on='LoanID')
-            except e as Exception:
+            except Exception as e:
                 print("Error in merging X_raw with shap_df")
                 traceback.print_exc()    
 
@@ -486,7 +486,7 @@ class ClassificationReport:
                     name=self._asset_path+"shap_values_stacked.csv", path_or_stream=power_bi_path
                 )
         except Exception as e:
-            print("Error in stacking the shap values")
+            print("Error in generating/logging SHAP stacked table")
             traceback.print_exc()
 
     def generate_metrics_plots(
