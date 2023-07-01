@@ -102,6 +102,8 @@ def main() -> None:
     X_test_df = pd.DataFrame(data=X_test, columns=Xcolumns)
     y_test = pd.DataFrame(data=y_test, columns=[TARGET_COL_NAME])
 
+    #pandas_X_test = X_test.to_pandas()
+    #pandas_y_test = y_test.to_pandas()
     xgb_model = XGBClassificationModel(NVIDIA_GPU_AVAILABILITY, HYPERPARAMS).fit(
         X_train, y_train
     )
@@ -119,7 +121,7 @@ def main() -> None:
         X=X_test_df,
         y=y_test,
         probas=classification_probas,
-        X_raw=df_raw,
+        X_raw=df_raw.to_pandas(),
         categorical_cols=CATEGORICAL_COLS,
         save_Table=True
     )
