@@ -12,6 +12,7 @@ from azureml.core import Run
 from sklearn import metrics
 from sklearn.metrics import classification_report, confusion_matrix
 from xgboost import plot_importance
+from constants_ import ID_COL_NAME
 
 from utils import timeit
 
@@ -429,22 +430,31 @@ class ClassificationReport:
     ) -> None:
         try:
             expl = shap.TreeExplainer(model)
+            series_id = X[ID_COL_NAME]
+            X.drop(columns=[ID_COL_NAME], inplace=True)
             shap_values = expl.shap_values(X)
             shap_df = pd.DataFrame(
                 shap_values, columns=[x + "_shap" for x in X.columns]
             )
+            # Add ID column back
+            shap_df[ID_COL_NAME] = series_id
             shap_df["prediction"] = probas
             shap_df["actual"] = y
-            shap_df["id"] = X.index
+            #shap_df["id"] = X.index
             if categorical_cols is not None:
                 for col in categorical_cols:
                     cols_feat = [x for x in shap_df.columns if col in x]
                     shap_df[col + "_shap"] = shap_df[cols_feat].sum(axis=1)
                     shap_df.drop(columns=cols_feat, inplace=True)
             try:
-                shap_df_merged = pd.merge(shap_df, X_raw, left_on="id", right_on='LoanID')
+                shap_df_merged = pd.merge(shap_df, 
+                                          X_raw, 
+                                          left_on=ID_COL_NAME, 
+                                          right_on=ID_COL_NAME, 
+                                          how="left")
             except Exception as e:
                 print("Error in merging X_raw with shap_df")
+                shapec_df_merged = shap_df
                 traceback.print_exc()    
 
             if save_Table:
@@ -475,8 +485,8 @@ class ClassificationReport:
         )
         try:
             shap_df.drop(columns=["prediction", "actual"], inplace=True)
-            shap_values_df = shap_df.stack().reset_index()
-            shap_values_df.columns = ["id", "feature", "shap_value"]
+            shap_values_df = shap_df.set_index(ID_COL_NAME).stack().reset_index()
+            shap_values_df.columns = [ID_COL_NAME, "feature", "shap_value"]
             if save_Table:
                 power_bi_path = os.path.join(
                     self._asset_path, "shap_values_stacked.csv"

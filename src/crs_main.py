@@ -46,7 +46,7 @@ def main() -> None:
     else:
         from pandas import DataFrame, get_dummies
     import pandas as pd
-    from azureml.core import Dataset, Run
+    from azureml.core import Dataset, Run, Datastore
     from sklearn.model_selection import train_test_split
 
     from constants_ import (
@@ -66,21 +66,20 @@ def main() -> None:
     datastore = ws.get_default_datastore()
 
     try:
-        data_folder_path = Dataset.File.from_files(
-            datastore.path(DATASTORE_FOLDER_NAME)
-        ).as_mount()
+        data_folder_path = datastore.path(DATASTORE_FOLDER_NAME).as_mount()
         df_raw = DataPreparation(data_folder_path, years).prepare_credit_risk_data()
-    except:
+    except Exception as e:
+        print(e)
         print("Downloading data from datastore...")
         download_from_datastore(datastore, BACKUP_DATA_FOLDER_NAME)
         df_raw = DataPreparation(BACKUP_DATA_FOLDER_NAME, years).prepare_credit_risk_data()
 
     df = get_dummies(df_raw)
-
+    df = df[[ID_COL_NAME] + [col for col in df.columns if col != ID_COL_NAME]]
     y = df[TARGET_COL_NAME].values
-    X = df.drop([TARGET_COL_NAME, ID_COL_NAME], axis=1).values
+    X = df.drop([TARGET_COL_NAME], axis=1).values
     Xcolumns = df.drop(TARGET_COL_NAME, axis=1).columns.tolist()
-    Xcolumns.remove(ID_COL_NAME)
+    #Xcolumns.remove(ID_COL_NAME)
 
     print("Splitting into train and test sets...")
     X_train, X_test, y_train, y_test = train_test_split(
@@ -101,9 +100,10 @@ def main() -> None:
         )
     X_test_df = pd.DataFrame(data=X_test, columns=Xcolumns)
     y_test = pd.DataFrame(data=y_test, columns=[TARGET_COL_NAME])
+    
+    X_train = X_train[:, 1:]
+    X_test = X_test[:, 1:]
 
-    #pandas_X_test = X_test.to_pandas()
-    #pandas_y_test = y_test.to_pandas()
     xgb_model = XGBClassificationModel(NVIDIA_GPU_AVAILABILITY, HYPERPARAMS).fit(
         X_train, y_train
     )
@@ -113,7 +113,7 @@ def main() -> None:
         run, NVIDIA_GPU_AVAILABILITY, CLASSIFICATION_PROBA_THRESHOLD
     )
     reporter.generate_metrics_plots(
-        X_test_df, y_test, xgb_model.model, classification_probas
+        X_test_df.drop(columns=[ID_COL_NAME]), y_test, xgb_model.model, classification_probas
     )
 
     reporter.stack_powerBi_table(
