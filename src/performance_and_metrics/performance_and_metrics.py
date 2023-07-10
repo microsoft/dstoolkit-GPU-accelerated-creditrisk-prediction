@@ -224,8 +224,7 @@ class ClassificationReport:
 
             # Get the top "number_important_feat" features by importance
             top_feats = np.argsort(feat_importance_scores)[::-1][:number_important_feat]
-            i = 0
-            for feat in top_feats:
+            for i, feat in enumerate(top_feats):
                 start = time.time()
                 plt.figure()
                 shap.dependence_plot(feat, shap_values, X)
@@ -244,7 +243,6 @@ class ClassificationReport:
                 print(
                     round(time.time() - start, 3), "secs time for SHAP dependence plot"
                 )
-                i = i + 1
         except Exception as e:
             print("Error in generating/logging SHAP dependence plot")
 
