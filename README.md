@@ -2,7 +2,7 @@
 
 This accelerator demos acceleration on GPUs for structured data by leveraging Nvidia Rapids. While we use Fannie Mae's [single family loan performance dataset](https://capitalmarkets.fanniemae.com/credit-risk-transfer/single-family-credit-risk-transfer/fannie-mae-single-family-loan-performance-data) to predict if a customer is going to be delinquent on the mortgage payments, this can be easily adopted for any huge structured datasets. Most of the preprocessing and model building tasks done by NumPy, Pandas and Scikit-Learn are supported.
 * Predict if a customer will be delinquent on credit payment.
-* Uses gpu acceleration to significantly reduce running time on huge structured data.
+* Uses gpu acceleration to significantly reduce the execution time on a structured dataset with millions of records.
 * [SHAP](https://github.com/slundberg/shap) to explain the predictions.
 
 ## Table of Contents
@@ -27,7 +27,7 @@ The following tables shows the comparison of the two workflows.
 The speedup is even more significant for a larger dataset.
 ![Benchmark on a Bigger Dataset](benchmarks/banchmark_results2.png)
 
-All this at less than half the cost!
+All this at less than half the cost of the compute!
 
 ## Getting Started
 

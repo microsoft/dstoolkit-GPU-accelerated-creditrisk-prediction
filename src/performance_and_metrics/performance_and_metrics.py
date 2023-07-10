@@ -12,8 +12,8 @@ from azureml.core import Run
 from sklearn import metrics
 from sklearn.metrics import classification_report, confusion_matrix
 from xgboost import plot_importance
-from constants_ import ID_COL_NAME
 
+from constants_ import ID_COL_NAME
 from utils import timeit
 
 
@@ -417,7 +417,7 @@ class ClassificationReport:
         print("\nTest ROC AUC Score: ", roc_auc)
 
         return classification_report_, conf_matrix, roc_auc
-   
+
     def create_powerbi_table_shap(
         self,
         model: object,
@@ -440,28 +440,30 @@ class ClassificationReport:
             shap_df[ID_COL_NAME] = series_id
             shap_df["prediction"] = probas
             shap_df["actual"] = y
-            #shap_df["id"] = X.index
+
             if categorical_cols is not None:
                 for col in categorical_cols:
                     cols_feat = [x for x in shap_df.columns if col in x]
                     shap_df[col + "_shap"] = shap_df[cols_feat].sum(axis=1)
                     shap_df.drop(columns=cols_feat, inplace=True)
             try:
-                shap_df_merged = pd.merge(shap_df, 
-                                          X_raw, 
-                                          left_on=ID_COL_NAME, 
-                                          right_on=ID_COL_NAME, 
-                                          how="left")
+                shap_df_merged = pd.merge(
+                    shap_df,
+                    X_raw,
+                    on=ID_COL_NAME,
+                    how="left",
+                )
             except Exception as e:
                 print("Error in merging X_raw with shap_df")
-                shapec_df_merged = shap_df
-                traceback.print_exc()    
+                shap_df_merged = shap_df
+                traceback.print_exc()
 
             if save_Table:
                 power_bi_path = os.path.join(self._asset_path, "shap_values.csv")
                 shap_df_merged.to_csv(power_bi_path, index=False)
                 self.run.upload_file(
-                    name=self._asset_path+"shap_values.csv", path_or_stream=power_bi_path
+                    name=self._asset_path + "shap_values.csv",
+                    path_or_stream=power_bi_path,
                 )
 
             return shap_df
@@ -493,7 +495,8 @@ class ClassificationReport:
                 )
                 shap_values_df.to_csv(power_bi_path, index=False)
                 self.run.upload_file(
-                    name=self._asset_path+"shap_values_stacked.csv", path_or_stream=power_bi_path
+                    name=self._asset_path + "shap_values_stacked.csv",
+                    path_or_stream=power_bi_path,
                 )
         except Exception as e:
             print("Error in generating/logging SHAP stacked table")
